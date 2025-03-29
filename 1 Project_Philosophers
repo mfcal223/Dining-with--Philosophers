@@ -1,0 +1,423 @@
+/* ***************************************************************/
+/*  Project Philosophers                                         */
+/*                                                 \___/         */
+/*   By: github.com/mfcal223                       ('v')         */
+/*                                               ((_____))       */
+/*   18/03/2025			                  +#+ +#+        */
+/* ***************************************************************/
+
+🍴🤔PHILOSOPHERS 😴😵
+=======================
+INDEX:
+└── [1] Philosophers Project Overview 
+		├── Project summary
+		├── Threading & Synchronization
+		├── Execution Arguments
+		├── Philosopher States & Logging
+		├── No Data Races
+		├── Mandatory Part	
+		├── Bonus Part
+		├── Key Challenges
+		└──	First Steps
+└──	[2] THREADS / Synchronization / Mutex lock 
+		└──	 What is a Thread? 
+			├── Creating a Thread
+			└──	Joining or Detaching Threads
+└──	[3] Managing Threads’ Shared Memory 
+		├──	The Danger of Data Races/Race Conditions
+		└──	Mutex lock for Linux Thread Synchronization
+				├──	Whati is a Mutex?
+				├──	Declaring a Mutex
+				└──	Destroying a Mutex
+└── [4] Links / Bibliography
+└── [5] BUILDING THE PROJECT (check file "Building_the_table")
+└── [6] CHECKLIST AND TEST CASES (check file "Testing_philosophers")
+
+📢 Disclaimer: 📢
+------------
+these text files will contain a summary of the project, a brief theoretical explanation of the most important concepts, 
+a summary on how I build the project. I have not made the bonus part (using processes and sempahores). therefore there 
+will be amost no information about it. Finally, there is a checklist for self-evaluation created by my friend and collegue
+Maria Sofia Piantan, which she most generously gave me.
+
+📢 PLEASE check the updated subject prompt as it might have changed or updated. 
+(because of copyright I am not allowed to copy it  here)
+
+⭐ [1] Philosophers Project Overview ⭐ 
+-----------------------------------
+The Philosophers project is a concurrency programming challenge that introduces the concepts of threads, mutexes,
+and synchronization. The task is inspired by the classic "Dining Philosophers Problem" in computer science, which
+explores deadlocks, starvation, and race conditions.
+
+The simulation involves "n" number of philosophers sitting at a round table (each of them brings a fork, that 
+they place to their right or left), eating, thinking, and sleeping. Each philosopher requires two forks to eat 
+(the one on his right and the one on his left), but there are limited forks, leading to potential conflicts in 
+accessing shared resources.
+
+🔰 Threading & Synchronization:
+	🔹 Each philosopher is represented as a separate thread.
+	🔹 Forks are shared resources that need to be protected using mutexes.
+	🔹 No global variables are allowed.
+
+🔰 Execution Arguments:
+>$ ./philo number_of_philosophers [time_to_die] [time_to_eat] [time_to_sleep] [[nb_of_times_each_philo_must_eat]]
+
+	🔺 number_of_philosophers: Total number of philosophers (and forks).
+	🔺 time_to_die (in milliseconds): If a philosopher doesn’t eat within this time, (since the beginning of their 
+		last meal or the beginning of the simulation) they die.
+	🔺 time_to_eat (in milliseconds) : Time a philosopher takes to eat. During that time, they will need to hold 
+		two forks.
+	🔺 time_to_sleep (in milliseconds): Time a philosopher takes to sleep.
+	🔺 number_of_times_each_philosopher_must_eat (optional): If provided, the simulation stops when each philosopher
+		has eaten this many times.
+
+🔰 Philosopher States & Logging:
+	🔹 Actions must be logged as:
+
+			❗timestamp_in_ms X has taken a fork
+			❗timestamp_in_ms X is eating
+			❗timestamp_in_ms X is sleeping
+			❗timestamp_in_ms X is thinking
+			❗timestamp_in_ms X died
+
+X = philosophers number.
+
+	🔹 Logs should not overlap or mix with each other.
+	🔹 A philosopher’s death message must be logged within 10ms of the actual death.
+
+🔰 No Data Races: 
+	🔺 The program must not have data races, meaning no two threads should access shared resources unsafely.
+
+🚀 Key Challenges
+===============
+1️⃣ Avoiding Deadlocks: If all philosophers pick up their left fork at the same time, no one can pick up the right
+	fork, causing a deadlock.
+
+		🆘 Deadlock is any situation in which no member of some group of entities (philosophers / threads) can proceed 
+		because each waits for another member, including itself, to take action , such as sending a message or, 
+		more commonly, releasing a lock (or take_forks / release_forks).
+
+2️⃣ Avoiding Starvation: Ensuring that all philosophers get a chance to eat and don’t starve indefinitely.
+3️⃣ Thread Safety: Preventing data races when multiple threads access shared resources.
+4️⃣	Mutexes handling: locking and unlocking different mutexes in different order will cause order violations. 
+
+🚀 First Steps
+=============
+🛠 Understand Threading, race conditions and Mutexes: Research pthread_create, pthread_mutex_lock, and 
+	pthread_mutex_unlock.
+🛠 Plan Your Synchronization Strategy: Decide how to control access to forks efficiently.
+🛠 Implement a Basic Structure 📂 :
+		1️⃣ Initialize philosopher threads.
+		2️⃣ Implement fork handling using mutexes.
+		3️⃣ Manage state transitions (eating, thinking, sleeping).
+		4️⃣ Handle termination conditions.
+🛠 Test for Race Conditions and Synchronization Issues.
+
+=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=
+
+⭐ [2] THREADS / Synchronization / Mutex lock ⭐
+==============================================
+
+📌 Concurrent Programming
+---------------------------
+For efficiency or by necessity, a program can be concurrent rather than sequential. Thanks to its concurrent 
+programming, it will be able to perform multiple tasks simultaneously instead of having to wait for the result of
+one operation to move onto the next. 
+There are three ways to implement concurrency in our programs: processes, threads, and multiplexing.
+
+📌 What is a Thread? 
+------------------
+A thread is a single sequence stream within a process, that is automatically managed by the operating system’s 
+kernel. Because threads have some of the properties of processes, they are sometimes called "lightweight processes".
+In contrast, a process is a "heavyweight" unit of kernel scheduling, as creating, destroying, and switching 
+processes is relatively expensive. 
+
+In computer science, a thread of execution is the smallest sequence of programmed instructions that can be managed 
+independently by a scheduler, which is typically a part of the operating system.
+
+❗ Each one of a process’s threads has its own context: its own ID, its own stack, its own instruction pointer, it’s 
+own processor register. But since all of the threads are part of the same process, they share the same virtual 
+memory address space: the same code, the same heap, the same shared libraries and the same open file descriptors.
+
+🏁 A thread’s context has a smaller footprint in terms of resources than the context of a process. Which means that
+ it is much faster for the system to create a thread than it is to create a process. Switching from one thread to 
+ the other, compared to switching from one process to another is also quicker.
+
+🏁 Threads don’t have the strict parent-child hierarchy that processes do. Rather, they form a group of peers 
+regardless of which thread created which other thread. The only distinction the “main” thread has is being the 
+first one to exist at the beginning of the process. This means that within the same process, any thread can wait 
+for any other thread to complete, or kill any other thread.
+
+🏁 Additionally, any thread can read and write to the same virtual memory, which makes communication between 
+threads much easier than communication between processes. We will later examine the problems that can arise from 
+this shared memory.
+
+💡 What are the differences between process and thread? 
+-------------------------------------------------------
+Threads are not independent from each other unlike processes. As a result, threads shares with other threads their
+code section, data section and OS resources like open files and signals. But, like processes, a thread has its own 
+program counter (PC), a register set, and a stack space. 
+
+Why Multithreading? 
+Threads are popular way to improve application through parallelism. For example, in a browser, multiple tabs can 
+be different threads. MS word uses multiple threads, one thread to format the text, other thread to process 
+inputs, etc. 
+
+Advantages and disadvantages of threads vs processes include:
+---------------------------------------------------------------
+✅ Lower resource consumption of threads: using threads, an application can operate using fewer resources than it
+	would need when using multiple processes.
+✅ Simplified sharing and communication of threads: unlike processes, which require a message passing or shared 
+	memory mechanism to perform inter-process communication (IPC), threads can communicate through data, code and 
+	files they already share.
+✅ Threads operate faster than processes due to following reasons: 
+    1️⃣ Thread creation is much faster. 
+    2️⃣ Context switching between threads is much faster. 
+    3️⃣ Threads can be terminated easily 
+    4️⃣ Communication between threads is faster.
+
+❌ Thread crashes a process: due to threads sharing the same address space, an illegal operation performed by a 
+	thread can crash the entire process. Therefore, one misbehaving thread can disrupt the processing of all the 
+	other threads in the application.
+
+📌 Multithreading (computer architecture)
+---------------------------------------
+In computer architecture, multithreading is the ability of a CPU (or a single core in a multi-core processor) to 
+provide multiple threads of execution.
+
+🏁 Advantages:
+
+	🔺 If a thread gets a lot of cache misses, the other threads can continue taking advantage of the unused 
+		computing resources, which may lead to faster overall execution, as these resources would have been idle
+		if only a single thread were executed. 
+	🔺 If a thread cannot use all the computing resources of the CPU (because instructions depend on each other`s 
+		result), running another thread may prevent those resources from becoming idle.
+
+🚩 Disadvantages
+	🔻 Multiple threads can interfere with each other when sharing hardware resources such as caches or translation 
+		lookaside buffers (TLBs). As a result, execution times of a single thread are not improved and can be 
+		degraded, even when only one thread is executing, due to lower frequencies or additional pipeline stages 
+		that are necessary to accommodate thread-switching hardware.
+
+📌 Using POSIX Threads
+-----------------------
+The standard interface in C to manipulate threads is *POSIX* with its <pthread.h> library. 
+It contains around sixty functions to create and join threads, as well as to manage their shared memory. 
+In order to compile a program using this library, we can’t forget to link it with -pthread:
+
+			⇶⇶ gcc -pthread main.c 
+
+			💡 something to consider for the Makefile....maybe.... ;)
+
+📌 Creating a Thread
+----------------------
+We can create a new thread from any other thread of the program with the pthread_create function. Its prototype is:
+
+			⇶⇶ int pthread_create(pthread_t *restrict thread,
+									const pthread_attr_t *restrict attr,
+									void *(*start_routine)(void *),
+									void *restrict arg);
+
+The arguments are:
+
+🔶 thread: a pointer towards a pthread_t type variable, to store the ID of the thread we will be creating.
+🔶 attr: an argument that allows us to change the default attributes of the new thread. This is beyond the scope of 
+	this article, and in general, passing NULL here suffices.
+🔶 start_routine: the function where the thread will start its execution. This function will have as its 
+	prototype: void *function_name(void *arg). When the thread reaches the end of this function, it will be done 
+	with its tasks.
+🔶 arg: a pointer towards an argument to pass to the thread’s start_routine function. If we’d like to pass several 
+	parameters to this function, we will need to give it a pointer to a data structure.
+
+When the pthread_create function ends, the thread variable we gave it should contain the newly created thread’s ID. 
+The function itself returns 0 if the creation was successful, or en error code if not.
+
+📌 Joining or Detaching Threads
+-------------------------------
+
+In order to block the execution of a thread until another thread finishes, we can use the *pthread_join function*:
+
+			⇶⇶ int pthread_join(pthread_t thread, void **retval);
+
+Its parameters are as follows:
+🔹 thread: the ID of the thread that this thread should wait for. The specified thread must be joinable (meaning 
+	not detached - see below).
+🔹 retval: a pointer towards a variable that can contain the return value of the thread’s routine function (the 
+	start_routine function we supplied at its creation). Here, we will not need this value: use NULL.
+🔹 The pthread_join function returns 0 for success, or an error code for failure.
+
+🚀  Why Do We Need pthread_join()?
+Threads are meant to work simultaneously, but when main() creates multiple threads, if main() exits before the 
+threads finish, all threads are forcefully terminated.
+❗ pthread_join() ensures main() doesn’t exit until all threads complete.
+pthread_join() prevents this by waiting for each philosopher thread, preventing 🧟 Zombie Threads 🧟
+A "zombie thread" is a thread that has finished execution but has not been properly collected.
+Using pthread_join() properly cleans up finished threads.
+
+Let’s note that we can only wait for the termination of a specific thread. There is no way to wait for the first 
+terminated thread without specifying an ID, as the wait function for child processes does.
+But in some cases, it is possible and preferable to not wait for the end of certain theads at all. In that case, 
+we can detach the thread to tell the operating system that it can reclaim its resources right away when it finishes 
+its execution.
+
+❗For that, we use the *pthread_detach* function (usually right after that thread’s creation):
+
+			⇶⇶ int pthread_detach(pthread_t thread);
+
+Here, all we have to supply if the thread’s ID. We get 0 in return if the operation was a success, or non-zero if
+there was an error. After detaching the thread, other threads will not be able to kill or wait for this thread 
+with pthread_join.
+
+=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=
+
+⭐ [3] Managing Threads’ Shared Memory ⭐
+-----------------------------------------
+
+One of the greatest qualities of threads is that they all share their process’s memory. Each thread does have its 
+own stack, but the other threads can very easily gain access to it with a simple pointer. 
+
+🚩🚩🚩What’s more, *the heap and any open file descriptors are totally shared between threads*.🚩🚩🚩 
+
+This shared memory and the ease with which a thread can access another thread’s memory clearly also has its share
+of danger: it can cause nasty synchronization errors. 🔥🔥
+
+📌 The Danger of Data Races/Race Conditions
+----------------------------------------------
+The problem is that 2 threads often access the same memory and modify a same variable area at the same time. 
+This is called *Race condition*. This can lead to an error in the final value of that variable.
+
+🚀 For a detailed explanation watch: https://www.youtube.com/watch?v=FY9livorrJI
+
+If we compile the program with the *-fsanitizer=thread* and *-g* options and then run it, like this:
+
+			⇶⇶ gcc -fsanitize=thread -g threads.c && ./a.out
+
+We will get an alert: “WARNING: ThreadSanitizer: data race”.
+
+📌 Mutex lock for Linux Thread Synchronization
+----------------------------------------------
+The most popular way of achieving thread synchronization is by using Mutexes.
+Thread synchronization is defined as a mechanism which ensures that two or more concurrent processes or threads
+do not simultaneously execute some particular program segment known as a critical section. 
+
+When one thread starts executing the critical section of the program, the other thread should wait until the first
+thread finishes. If proper synchronization techniques are not applied, it may cause a race condition where the
+values of variables may be unpredictable and vary depending on the timings of context switches of the processes or
+threads.
+
+🙊 What is a Mutex?
+--------------------
+A mutex (short for " mut-ual ex-clusion") is a synchronization primitive. It is essentially a lock that allows us
+to regulate access to data and prevent shared resources being used at the same time, and releases it after using it.
+When the lock is set, no other thread can access the locked region of code.
+
+🔍 Working of a mutex:
+-----------------------
+Imagine multiple people (threads) trying to enter a locked room (a critical section of code). 
+The key to the room is the mutex lock.
+
+One person (a thread) gets the key and enters the room, locking the door behind them.
+If the manager (scheduler/monitor) decides to switch turns and lets another person try, they reach the door but 
+find it locked.
+That person has no choice but to wait (go to sleep) until the door is unlocked.
+This switching process might happen repeatedly, but no one else can enter the room until the first person finishes
+their work and unlocks the door.
+Once unlocked, another person can grab the key and enter.
+This ensures that only one thread at a time can execute that piece of code, preventing conflicts and keeping 
+things in order.
+
+🙊 Declaring a Mutex
+----------------------
+Thanks to the <pthread.h> header, we can declare a mutex type variable like this:
+
+				⇶⇶ pthread_mutex_t    mutex;
+
+Before we can use it, we first need to initialize it with the *pthread_mutex_init* function which has the 
+following prototype:
+
+				⇶⇶ int pthread_mutex_init(pthread_mutex_t *mutex,
+										const pthread_mutexattr_t *mutexattr);
+                        
+There are two parameters to supply:
+🔹 mutex: the pointer to a variable of pthread_mutex_t type, the mutex we want to initialize.
+🔹 mutexattr: a pointer to specific attributes for the mutex. We will not worry about this parameter here, we can
+	just say NULL.
+🔹 The pthread_mutex_init function only ever returns 0.
+
+🙊 Locking and Unlocking a Mutex
+---------------------------------
+In order to lock and unlock our mutex, we need two other functions. 
+Their prototypes are as follows:
+
+				⇶⇶  int pthread_mutex_lock(pthread_mutex_t *mutex);
+				⇶⇶  int pthread_mutex_unlock(pthread_mutex_t *mutex);
+
+If the mutex is unlocked, pthread_mutex_lock locks it and the calling thread becomes its owner. In this case, the
+function ends immediately. However, if the mutex is already locked by another thread, pthread_mutex_lock suspends 
+the execution of the calling thread until the mutex is unlocked.
+
+The pthread_mutex_unlock function unlocks a mutex. The mutex to be unlocked is assumed to be locked by the calling 
+thread, and the function only sets it to unlocked. 
+
+💡 Let’s be careful to note that this function does not check if the mutex is in fact locked and that the calling 
+thread is actually its owner: a mutex could therefore be unlocked by a thread that did not lock it in the first 
+place. We will need to be careful about arranging pthread_mutex_lock and pthread_mutex_unlock in our code, 
+otherwise, we might get “lock order violation” errors.
+It is very important to be consistent with the order of locking and unlocking to prevent this. ❗❗❗❗
+
+Both of these functions return 0 for success and an error code otherwise.
+
+💡 Even though Locking and Unlocking helps protect a critical area of the code against race conditions, excessive
+mutex locks can delay thread execution.
+
+🙊 Destroying a Mutex
+----------------------
+When we no longer need a mutex, we should destroy it with the following pthread_mutex_destroy function:
+
+				⇶⇶ int pthread_mutex_destroy(pthread_mutex_t *mutex);
+
+This function destroys an unlocked mutex, freeing whatever resources it might hold. 
+
+=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=
+
+⭐ [4] LINKS: ⭐
+---------------------
+🍴 https://en.wikipedia.org/wiki/Dining_philosophers_problem
+🍴 https://www.codequoi.com/en/threads-mutexes-and-concurrent-programming-in-c/
+🍴 https://en.wikipedia.org/wiki/Thread_(computing)
+🍴 https://en.wikipedia.org/wiki/Multithreading_(computer_architecture)
+🍴 https://www.geeksforgeeks.org/multithreading-in-c/
+🍴 https://www.geeksforgeeks.org/multithreading-in-c/
+🍴 https://en.wikipedia.org/wiki/Pthreads
+🍴 https://42-cursus.gitbook.io/guide/rank-03/philosophers/functions-used
+🍴 https://en.wikipedia.org/wiki/Deadlock_(computer_science)
+🍴 https://www.geeksforgeeks.org/mutex-lock-for-linux-thread-synchronization/
+🍴 "What is a mutex in C?" - CodeVault ->  https://www.youtube.com/watch?v=oq29KUy29iQ
+🍴 https://github.com/TommyJD93/Philosophers 
+(a good example on how to structurized the project, I have not checked the code)
+
+
+🍴 In spanish
+    Programar en C con Hilos pthreads
+        https://youtu.be/NAKrOZCcJ4A?si=tmkTzTuVghDMLmVU
+    Como crear hilos en C usando Pthread (POSIX)
+        https://youtu.be/ROzCbSwrltA?si=-76wBcchhhMLSnPa
+    Paso de Argumentos a Hilos en C (POSIX)
+        https://youtu.be/Q6sJaVs0cbA?si=YtIht545Y16RqBXz
+    Programar en C: Semaforos POSIX
+        https://youtu.be/YC61729PThw?si=NM9OBziBzhKDSBMT
+    Mutex. Sincronización de hilos. Programar en C, Linux
+        https://youtu.be/faZEhIHdJx8?si=8yKjMn-O9ZmuCHec
+    Aprende a sincronizar hilos en C con Mutex
+        https://youtu.be/q66qT0f60Ko?si=EjiU55i2v7Tqei6g
+    Cómo usar la función wait en C para el control de procesos:
+        https://youtu.be/vj3pXk6MoSY?si=bFkxCYg8U8CN2rF7
+    fork(). Parte I: ,Creación de un nuevo proceso, hijos, padres, zombies y huérfanos
+        https://youtu.be/VwjP-KFuZCM?si=xTRFUsnVnIrXGomU
+    fork(). Parte II. wait, fork , exit status, múltiples hijos
+        https://youtu.be/Dt9z_ohQWHI?si=p7djOpkspi2B9LlZ
+    
+=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=
+📢📕📗📘📙→🚨🔍⚠💡🎮 🎉 🔰🏁🚩🛟🔶🔷🔴🟠🟢🟣🟡🔵⇶🙊 🍝🧑‍🍳🧠🐢 🛠️🔧💭💀🪫
+1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣8️⃣9️⃣🔟✅.🚫❗⭐🥴  😴😵🍴🤔 🗑📥🚀🔥🎯 ❌ 🔹🔸🔺🔻📌🧪🧵🏛
+

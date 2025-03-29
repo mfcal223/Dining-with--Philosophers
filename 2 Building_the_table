@@ -1,0 +1,738 @@
+/* ***************************************************************/
+/*  Building the table                                           */
+/*                                                 \___/         */
+/*   By: github.com/mfcal223                       ('v')         */
+/*                                               ((_____))       */
+/*   18/03/2025			                  +#+ +#+        */
+/* ***************************************************************/
+
+🍴🍝🤔 PHILOSOPHERS 😴😵
+=======================
+INDEX:
+├── [1] Philosophers Project Overview (check file "Project_Philosophers")
+├──	[2] THREADS / Synchronization / Mutex lock (check file "Project_Philosophers")
+├──	[3] Managing Threads’ Shared Memory (check file "Project_Philosophers")
+├── [4] Links / Bibliography(check file "Project_Philosophers")
+├── [5] BUILDING THE PROJECT (check file "Building_the_table")
+|		├── INPUT CHECKS && STRUCTURE CREATION. 
+|		|		├──Input validation.
+|		|		└──CREATE  STRUCTURES
+|		|			└── The Header file (philo.h)
+|		├── INITIALIZE STRUCTURES AND MUTEXES
+|		|		├──FORK LOGIC
+|		|		THREAD CREATION 
+|		├── SIMULATION MANAGEMENT
+|		|		├──THE ROUTINE
+|		|		├──Death Monitor, Meal Monitor & Ending
+|		|		|	├── DEATH Monitor
+|		|		|	├── MEAL Monitor
+|		|		|	└── ENDING THE SIMULATION
+|		|		|			└── Key Points where flags are checked
+|		|		├── Sync the threads: sync_threads() and pthread_join()
+|		|		└── ASCII- diagramas to summarize routine. monitors and end of simulation
+|     		└── PROJECT WORKFLOW
+└── [6] CHECKLIST AND TEST CASES (check file "Testing_philosophers")
+
+📢 Disclaimer: 📢
+------------
+these text files will contain a summary of the project, a brief theoretical explanation of the most important concepts, 
+a summary on how I build the project. I have not made the bonus part (using processes and sempahores). therefore there 
+will be amost no information about it. Finally, there is a checklist for self-evaluation created by my friend and collegue
+Maria Sofia Piantan, which she most generously gave me.
+
+📢 PLEASE check the updated subject prompt as it might have changed or updated. 
+(because of copyright I am not allowed to copy it  here)
+
+=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=
+
+⭐⭐ [5] BUILDING THE Project ⭐⭐
+================================
+
+1️⃣ Check the input 
+2️⃣ Create a data structure to store all required information about a philosopher
+    💡 Some variables have to be shared between all philosophers so take this into account when creating your data structures.
+2️⃣ Initialize the structures. 
+3️⃣ Create the correct number of philosopher, threads and mutexes.
+4️⃣ Create a routine
+    💡 What each philosopher has to do ? In which order ?
+	📌 Your philosophers have to do the following things (in order) in the routine.
+				🍝 Eat
+				😴 Sleep
+				🤔 Think
+				❗ Repeat until death 💀
+5️⃣ Initiate the threads with said routine
+6️⃣ Create a loop that runs until any of your philosophers die. (If you have to loop until any of your philosphers 
+die, it might be a good idea to check in the routine if any of your philosopher has died.)
+7️⃣ Close and clean everything elegantlly when simulation ends. 
+8️⃣ Check for memory leaks and data races.
+9️⃣ Use checklist to confirm you have taken care of everything.
+🔟 Use the different test cases to challenge your program.
+
+1️⃣ INPUT CHECKS  
+----------------
+
+📌 Input validation:
+
+	✅ Correct number of arguments (must be 5 or 6).
+	✅ All arguments are numeric (digits only).
+	✅ Integer conversion is safe (handles overflows).
+	✅ Values fall within acceptable ranges:
+	🔹argv[1]: Number of philosophers (1 to 200).
+	🔹argv[2]-argv[4]: Time values (minimum 60 ms).
+	🔹argv[5] (optional): Number of meals (must be greater than 0).
+
+2️⃣ STRUCTURE CREATION 
+
+📌 Header File (philo.h)
+Defines structures, constants, and function prototypes.
+
+🗃 Libraries to be included: 
+-----------------------------
+
+💡 # include <pthread.h>
+🔺 pthread_mutex_t and pthread_t are predefined structures in the POSIX Threads (pthreads)
+pthread_mutex_t is a mutex (mutual exclusion) object used for thread synchronization.
+It is initialized with pthread_mutex_init().
+It is locked/unlocked with pthread_mutex_lock() and pthread_mutex_unlock().
+
+🔺 pthread_t is a thread identifier used to manage individual threads.
+It is created using pthread_create().
+It is used to manage threads with pthread_join() or pthread_detach().
+
+💡 # include <stdint.h> //to use uint64_t
+
+🔺 What is uint64_t?
+uint64_t is a fixed-width unsigned integer type that is exactly 64 bits (8 bytes) in size. 
+It is part of the C standard library and is defined in stdint.h.
+
+Properties of uint64_t:
+🔹 Represents only positive numbers (unsigned).
+🔹 Always 64 bits wide, regardless of the system architecture (32-bit or 64-bit).
+🔹 Useful for timestamps (e.g., storing milliseconds in a philosopher simulation).
+u_int64_t is used for time-related variables to ensure precision and compatibility across different systems.
+This is important for accurately measuring time intervals in the simulation. The use of unsigned integers
+also ensures that time values are always positive, 64 bits provides a wide range of values to work with.
+
+💡 # include <sys/time.h> 	// to use get_time_ms() 
+
+🔺 get_time_ms() is a function that will use <sys/time.h> and struct timeval a predefined structure 
+in <sys/time.h> that contains:
+
+						struct timeval 
+						{
+							time_t      tv_sec;   // Seconds
+							suseconds_t tv_usec;  // Microseconds
+						};
+
+🔺tv_sec → The number of whole seconds.
+🔺tv_usec → The number of microseconds (1,000,000 per second).
+
+It will store this information in the timeval variable tv and use it to obtain current time. 
+
+🛟 Timestamping: keeping good track of the time and the timestamps is important, as they define if the program
+ will work or not. Timestamps will be uso to determine the routine rhythm, the death_time, and synchronizing all
+ this is key to prevent deadlocks.
+
+3️⃣ INITIALIZE STRUCTURES / ELEMENTS CREATION.
+------------------------------------------------
+
+🔶 Initialize your structures. 
+🔶 Allocate memory for your threads and mutexes.
+		🔹malloc(sizeof(t_philo)
+		🔹malloc(sizeof(pthread_t)
+		🔹malloc(sizeof(pthread_mutex_t)
+🔶 Initialize the threads: philosophers && monitors.
+		🔹pthread_create()
+🔶 Initialize forks and all the mutexes.
+		🔹pthread_mutex_ini()
+
+🚨🚨🚨 REMEMBER SUBJECT PROMPT AND THE CONDITIONS REGARDING THE AMOUNT OF THREADS AND FORKS.
+
+🍴 FORK LOGIC
+-------------
+There will be as many forks as philosophers, but every philosopher will need to obtain / grab / take 2 forks.
+There are different ways to assign them: as an array, in a circular linking, etc.
+
+I choose to do it in an array, based on the number of philosophers: the fork with the same index as the philosopher
+is assign to the "left" hand, and the one for the right would be [i - 1]. In the particular case for 
+philosopher [0], right one was [num_philo - 1], so he was using, the fork of the philo with the highest index. 
+
+	🎯 forks are stored in an array inside my main structure and each philosopher takes 
+		forks from this array without looping back.
+
+🔍 Example: there are 4 Philosophers (ID: 1, 2, 3, 4) 
+	Philosopher	🏛		Left Fork	Right Fork
+	Philo 1 (index 0)	forks[0]	forks[3] (last fork)
+	Philo 2 (index 1)	forks[1]	forks[0]
+	Philo 3 (index 2)	forks[2]	forks[1]
+	Philo 4 (index 3)	forks[3]	forks[2]
+
+	🔸 Each fork is represented by main_struct->forks[i].
+	🔸 Each philosopher’s left fork is main_struct->forks[i].
+	🔸 Each philosopher’s right fork is main_struct->forks[i - 1], except for Philosopher 1, 
+		who takes the last fork as their right fork (fork 3).
+
+🔶 Step-by-Step Fork Assignment (for data->philo[i]):
+
+ 📌Implementing init_forks()
+Since forks are just mutexes inside an array, init_forks() will:
+
+Initialize each fork mutex in data->forks[i].
+Assign each philosopher’s left and right fork using the rules above.
+(first philosopher is assign fork [0] and last fork (num_philos -1))
+
+Each philosopher has two fork references:
+pthread_mutex_t	*left_fork;
+pthread_mutex_t	*right_fork;
+However, these are just pointers to data->forks[i]. The mutexes only exist in t_data.
+
+🔹 There are NO redundant fork mutexes.
+🔹 All fork mutexes are necessary.
+
+3️⃣ THREAD CREATION 
+To create the threads we are going to use the function pthread_create().
+
+In my model of program I used 3 "types" of threads:
+🏛 Each philosopher is a separate thread (pthread_create). 
+💀 A monitor thread: to check is any philosopher has died.
+🧑‍🍳 A meal monitor: to check if all philosophers have eaten enough (argument number 6 if defined = number_of_meals)
+
+
+4️⃣ SIMULATION MANAGEMENT: 
+-------------------------
+
+When using pthread_create() you will declare the function that the thread will execute.
+
+🏛 philosophers --> function that handles the routine
+💀 death monitor -- > function that handles death recognition
+🧑‍🍳 meal monitor --> function that keeps track of meal count for all philosophers.
+
+Depending on the workflow of the program, you need to configure a way for the monitors to trigger the end of the
+ simulation when either of these conditions are met:
+ 🪫 a philosopher has not eaten about the time_to_die
+ 🥴 all philosphers have eaten as many times as define byt argument[6]
+
+⏰ THE ROUTINE ⏰
+------------------------
+Each philosopher is a separate thread, running a loop that follows the routine (in order):
+				🍝 Eat
+				😴 Sleep
+				🤔 Think
+				❗ Repeat until death 💀
+
+💡 Consider separating the handling for only 1 philosopher. 
+	By definition he cannot survive, as there is only one fork.
+
+💡 You might need to add "usleep()" or any other "waiting_time()" her and there to prevent 
+	overloading the CPU or to prevent some philosophers from doing something.
+
+⏰ Routine Entry: 
+-----------------
+If the philosopher’s ID is even, it waits briefly before starting.
+  This prevents all threads from trying to access forks at the same time, helping avoid deadlocks at the start of
+  the simulation.
+
+⏰  Main Loop:
+--------------
+While the simulation is still active:
+
+  a. Check if simulation should continue
+     - A shared flag (`keep_iterating`) protected by a mutex is checked 
+       to avoid race conditions.
+
+  b. Death Check
+     - Before doing anything, the philosopher checks if they’ve already died.
+
+  c. Try to take both forks
+     - Forks are represented by mutexes. 
+     - The program ensures consistent locking order (e.g., lower-indexed mutex first)
+       to prevent deadlocks.
+     - If the philosopher is the only one in the simulation (1 philosopher case),
+       they will pick up one fork and eventually die, as they can`t proceed.
+
+  d. Eat
+     - If forks were successfully taken:
+       - The philosopher updates the last meal timestamp (with a mutex).
+       - A message is printed.
+       - The meal count is increased (with a mutex).
+       - The thread sleeps for `time_to_eat`.
+
+  e. Release both forks
+     - Forks are unlocked after eating.
+
+  f. Sleep
+     - The philosopher prints a message and sleeps for `time_to_sleep`.
+
+  g. Think
+     - The philosopher prints a message and thinks briefly (small delay).
+
+
+ ⏰ Exit Condition: 
+-------------------
+- The loop exits if:
+  - The simulation is marked as finished (someone died or all are full).
+  - The philosopher dies.
+  - They fail to acquire forks or another fatal condition occurs.
+
+This structure ensures that:
+- Only one thread prints at a time (via a print mutex),
+- Fork access is protected (fork mutexes),
+- Shared data is synchronized (meal counts, death flags),
+- The program is free of deadlocks and race conditions (when logic is respected).
+
+💀 Death Monitor,🧑‍🍳 Meal Monitor & 🪫 Ending
+-------------------------------------------
+
+The simulation includes two dedicated threads for monitoring:
+  - One checks if a philosopher has died.
+  - The other checks if all philosophers have eaten enough (optional).
+
+Both threads run in parallel with philosopher threads and use mutexes to safely
+read and modify shared state.
+
+
+ 💀 Death Monitor 
+--------------------
+
+-> Created at the start of the simulation in init_threads().
+-> Continuously loops through all philosophers to check if any have died.
+
+  a. For each philosopher:
+     - Compares current time with their last_meal_time.
+     - If the time exceeds time_to_die, the philosopher is considered dead.
+
+  b. When a philosopher dies:
+     - end_of_simulation() is called.
+     - It sets:
+       - <keep_running_the_simulation_variable> = 0
+       - <death_status_variable> = 1
+     - These are protected with the `simulation_lock` mutex.
+     - A death message is printed.
+
+  c. Exits the monitoring loop as soon as a death is confirmed or the simulation ends.
+
+🧑‍🍳 Meal Monitor
+------------------------------
+
+-> Only created if the optional 6th argument (must_eat_count) is provided.
+-> Also created in init_threads().
+
+  a. Iterates through all philosophers:
+     - Checks if each has eaten at least the required number of meals.
+     - Each philosopher`s meal count is protected with its own mutex.
+
+  b. If all philosophers meet the goal:
+     - end_of_simulation() is called.
+     - It sets:
+       - <keep_running_the_simulation_variable> = 0
+       - <death_status_variable> = 1
+
+  c. Exits the loop if:
+     - All meals are completed.
+     - A philosopher has died.
+     - The simulation was stopped.
+
+🪫 End of Simulation (end_of_simulation())
+------------------------------
+
+-> Called by either the death monitor or the meal monitor.
+-> Its job is to safely signal that the simulation should stop.
+
+  - Locks `simulation_lock`.
+  - If `keep_iterating` is still true:
+       - <keep_running_the_simulation_variable> = 0
+       - <death_status_variable> = 1
+  - Unlocks the mutex.
+
+-> Optionally, it also finds the philosopher who died and prints the death message.
+
+🚨 Key Points Where Flags Are Checked
+-------------------------------------
+
+Philosopher threads constantly check if they should stop:
+
+✔ Check for simulation ending conditions: 
+   - Return false if  <keep_running_the_simulation_variable> = 0 
+   		and/or  <death_status_variable> = 1
+
+✔ function to check if any philo is_dead()
+   - Before taking forks or eating, the philosopher verifies they are not dead.
+
+✔ Main loop condition in philo_routine()
+   - Continually checks the simulation status before and after every action.
+
+✔ print_msg using locks
+   - Messages are only printed if the simulation is still active.
+
+
+⏰ Sync the threads: sync_threads() and pthread_join()
+---------------------------------------------------------
+
+-> Called at the end of init_admin().
+-> Waits for all threads to finish:
+   - Waits for death_monitor to return.
+   - Waits for meal_monitor (if created).
+   - Waits for all philosopher threads.
+
+✔ This ensures the main thread does not exit early and guarantees that all threads end before exiting.
+✔ It allows a graceful shutdown after the simulation ends.
+
+=================================================================================
+            ROUTINE FLOW
+=================================================================================
+               +-------------------------------+
+               |      Philosopher Thread       |
+               |      (philo_routine)          |
+               +-------------------------------+
+                            |
+                            v
+         +----------------------------------------------+
+         | If ID is even → wait a bit to avoid deadlock |
+         +----------------------------------------------+
+                            |
+                            v
+                  +---------------------+
+                  | Start Routine Loop  |
+                  |  while (keep going) |
+                  +----------+----------+
+                             |
+                             v
+            +------------------------------------+
+            | Check check_keep_iterating()       |
+            | Return false if dead or stopped    |
+            +------------------------------------+
+                             |
+                             v
+              +------------------------------+
+              | Check if philosopher is dead |
+              | has_died()                   |
+              +------------------------------+
+                             |
+                             v
+                 +------------------------+
+                 | Try to take both forks |
+                 | take_forks()           |
+                 +------------------------+
+                             |
+                             v
+         +------------------------------------------+
+         | If forks taken → eat_philo():            |
+         | - update last_eat time (mutex)           |
+         | - print eating                           |
+         | - increase meals (mutex)                 |
+         | - wait time_to_eat                       |
+         +------------------------------------------+
+                             |
+                             v
+              +------------------------------+
+              | Drop forks (mutex unlocks)   |
+              +------------------------------+
+                             |
+                             v
+         +---------------------------------------------+
+         | Sleep:                                      |
+         | - update status                             |
+         | - print sleeping                            |
+         | - wait time_to_sleep                        |
+         +---------------------------------------------+
+                             |
+                             v
+         +---------------------------------------------+
+         | Think:                                      |
+         | - update status                             |
+         | - print thinking                            |
+         | - short wait (optional)                     |
+         +---------------------------------------------+
+                             |
+                             v
+              +------------------------------+
+              | Repeat loop if still active  |
+              +------------------------------+
+
+                            ...
+                            |
+                            v
+                 +----------------------+
+                 | Exits the loop when: |
+                 | - Simulation ends    |
+                 | - Philosopher dies   |
+                 +----------------------+
+=================================================================================.
+         MONITORS + END OF SIMULATION
+=================================================================================
+
+                    +------------------------+
+                    |     Main Thread        |
+                    | (calls init_admin)     |
+                    +-----------+------------+
+                                |
+                                v
+              +----------------+----------------+
+              |                                 |
+       +------v------+                  +-------v--------+
+       |  Death Monitor  |              |   Meal Monitor  |
+       | (check_death)   |              | (check_meals)   |
+       +--------+--------+              +--------+--------+
+                |                                |
+                |       No                       |
+                |  Philosopher died?             | All meals met?
+                |       Yes                      |       Yes
+                |                                |
+                +------------+  +----------------+
+                             |  |
+                             v  v
+                      +------+--+------+
+                      | end_simulation |
+                      +--------+-------+
+                               |
+        +----------------------+-----------------------+
+        |                      |                       |
+        v                      v                       v
+   keep_iterating = 0      dead = 1            print death message
+   (mutex locked)        (mutex locked)        (optional, from dying thread)
+
+                               |
+                               v
+                    +----------+----------+
+                    |     All Threads     |
+                    |  Check this flag →  |
+                    |  check_keep_iterating() |
+                    +----------+----------+
+                               |
+                               v
+                    +----------+----------+
+                    |     sync_threads()   |
+                    | (joins all threads)  |
+                    +----------------------+
+
+
+
+=================================================================================
+                         COMBINED FLOW: ROUTINE + MONITORS + END LOGIC
+=================================================================================
+
+                                  +--------------------+
+                                  |     Main Thread    |
+                                  |   (init_admin)     |
+                                  +---------+----------+
+                                            |
+                                            v
+        +-----------------------------+     +-----------------------------+
+        | Create philosopher threads  |     | Create monitor threads      |
+        | (1 per philosopher)         |     | (check_death [+ check_meals])|
+        +-----------------------------+     +-----------------------------+
+                      |                                   |
+                      |                                   |
+                      v                                   v
+    +-----------------------------------+     +-----------------------------+
+    |         Philosopher Routine       |     |     Death Monitor Thread    |
+    |          (philo_routine)          |     |        (check_death)        |
+    +--------------------+--------------+     +-------------+---------------+
+                         |                                  |
+                         v                                  |
+       +-------------------------------+                    |
+       | Wait if ID is even (optional) |                    |
+       +-------------------------------+                    |
+                         |                                  |
+                         v                                  |
+         +-------------------------------+                  |
+         | Start Routine Loop (while sim)|                  |
+         +-------------------------------+                  |
+                         |                                  |
+      +------------------v------------------+         +-----v--------------------+
+      | Check check_keep_iterating() flag   |         | Loop through philosophers|
+      +-------------------------------------+         | check if any has died    |
+                         |                            +------------+-------------+
+                         v                                         |
+         +-----------------------------+         +----------------v----------------+
+         | Check if philosopher is dead|         | If dead: call end_simulation()  |
+         +-----------------------------+         +---------------------------------+
+                         |                                               
+                         v
+              +---------------------+
+              | Try to take forks   |
+              +---------------------+
+                         |
+                         v
+       +------------------------------------+
+       | If success → eat_philo():          |
+       | - update last_eat (mutex)          |
+       | - print message                    |
+       | - increment meals (mutex)          |
+       | - wait time_to_eat                 |
+       +------------------------------------+
+                         |
+                         v
+              +---------------------+
+              | Drop forks          |
+              +---------------------+
+                         |
+                         v
+              +---------------------+
+              | Sleep (time delay)  |
+              +---------------------+
+                         |
+                         v
+              +---------------------+
+              | Think (brief pause) |
+              +---------------------+
+                         |
+                         v
+           +----------------------------+
+           | Repeat while simulation OK |
+           +----------------------------+
+
+            +-------------------------------------------+
+            |          Meal Monitor Thread              |
+            |          (if meal count enabled)          |
+            +--------------------------+----------------+
+                                       |
+                                       v
+           +-------------------------------------------+
+           | Loop through philosophers, count meals    |
+           +-------------------------------------------+
+                                       |
+                                       v
+           +------------------------------+
+           | If all ate enough:           |
+           | call end_simulation()        |
+           +------------------------------+
+
+                          BOTH MONITORS CALL:
+
+                    +---------------------------+
+                    |     end_simulation()      |
+                    | - keep_iterating = 0      |
+                    | - dead = 1                |
+                    | - (mutex protected)       |
+                    +-------------+-------------+
+                                  |
+                                  v
+              +-------------------------------+
+              | All threads check flag using: |
+              | check_keep_iterating()        |
+              +-------------------------------+
+                                  |
+                                  v
+                       +-----------------------+
+                       | Threads exit gracefully|
+                       +-----------+-----------+
+                                   |
+                                   v
+                       +-----------------------+
+                       |     sync_threads()    |
+                       | Wait for all joins    |
+                       +-----------------------+
+
+
+=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=
+
+Workflow of MY Philosopher`s Program
+====================================
+
+1. Input Validation
+Ensures that the program receives valid arguments before initializing the simulation..
+
+validate_input(ac, av) → Checks the number and validity of arguments.
+check_numbers(ac, av) → Iterates through arguments and verifies they are valid numbers.
+is_number(str) → Ensures the string contains only numeric characters.
+is_valid_number(num, index) → Checks if the number falls within the valid range.
+
+📄 File: validation.c
+
+2. Structures Initialization & Thread/Mutex Creation
+Initializes core data structures, mutexes, and threads.
+
+init_admin(ac, av) → Oversees data initialization and thread creation.
+init_data(data, ac, av) → Allocates memory and initializes program parameters.
+init_data_mutexes(data) → Initializes global mutexes (e.g., print_lock, death_lock).
+init_forks(data) → Assigns a fork mutex to each philosopher.
+init_philosophers(data) → Sets initial values for each philosopher.
+init_threads(data) → Creates threads for philosophers and monitoring.
+
+📌 Prepares all necessary data structures before starting the simulation.
+📄 File: initialization.c​
+
+Main()
+├──validate_input()
+│   ├── check_numbers()  
+│   │    ├── is_number()  →  (Ensures digits only)
+│   │    ├── ft_atol()    →  (Converts to integer)
+│   │    └── is_valid_number() →  (Checks range)
+│   ├── Final Validation & Error Handling  
+│   └── Return 1 (Success) / 0 (Failure)
+├─────────────────── init_admin()
+│	│					├─ init_data()
+│	│					│	└─ init_data_mutexes()
+│	│					├─ init_philosophers()
+│	│					│	└─ init_forks()
+│	│					├─ init_threads() // creates philo-ths, death_monitor, meal_monitor
+│	│						
+│	└──if error --> close_adm()
+
+3. Routine Setting
+Defines philosopher actions (eating, sleeping, thinking).
+
+philo_routine(philo) → Main routine executed by each philosopher thread.
+take_forks(philo) → Locks both forks before eating.
+lock_forks(philo, left_index, right_index) → Ensures proper fork locking order.
+eat_philo(philo) → Philosopher eats, updates time, and increments meal count.
+sleep_philo(philo) → Philosopher sleeps for time_to_sleep.
+think_philo(philo) → Philosopher enters thinking state.
+drop_forks(philo) → Releases both forks after eating.
+
+📌 Defines the behavior of each philosopher during the simulation.
+📄 Files: routine.c​routine, routine2.c​routine2
+
+4. Death Check
+Monitors if a philosopher has died.
+
+check_death(data) → Thread responsible for detecting deaths.
+monitor_philosopher_death(data) → Iterates through philosophers to check if any have died.
+has_died(philo) → Determines if a philosopher has exceeded time_to_die.
+should_stop_monitoring(data) → Checks if the simulation should stop.
+
+📌 Ensures a philosopher’s death is detected immediately.
+📄 Files: monitor_death.c​monitor_death, simulation.c​simulation
+
+5. Printing of Messages
+Handles the output of messages to prevent race conditions.
+
+print_msg(philo, msg) → Displays philosopher actions (eating, sleeping, thinking, taking forks, dying).
+get_time_ms() → Returns the current timestamp in milliseconds.
+
+📌 Ensures that messages are printed correctly without overlapping.
+📄 File: tools.c​tools
+
+6. Freeing/Cleaning/Closing
+Properly releases allocated memory and destroys mutexes.
+
+free_philo_mutexes(data) → Destroys individual mutexes for philosophers.
+free_global_mutexes(data) → Destroys global mutexes (print, death locks).
+free_data(data) → Frees all allocated memory.
+close_adm(data, str) → Calls cleanup functions and prints exit message.
+📌 Prevents memory leaks and ensures proper cleanup at program termination.
+📄 File: cleaning.c​cleaning
+
+7. General Workflow Summary
+Validate input.
+Initialize structures, forks, and threads.
+Start philosopher threads.
+Each philosopher alternates between eating, sleeping, and thinking.
+Monitoring threads check if a philosopher has died or if all have eaten enough.
+If a philosopher dies, the simulation stops immediately.
+Clean up resources before exiting.
+📌 Manages the overall flow of execution to ensure proper simulation behavior.
+📄 File: main.c​
+
+=================================================================================
+
+
+
+
+=====================================================================================================================
+
+
+📢📕📗📘📙→🚨🔍⚠💡🎮 🎉 🔰🏁🚩🛟🔶🔷🔴🟠🟢🟣🟡🔵⇶🙊 🍝🧑‍🍳🧠🐢 🛠️🔧💭💀🪫⏰
+1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣8️⃣9️⃣🔟✅.🚫❗⭐🥴  😴😵🍴🤔 🗑📥🚀🔥🎯 ❌ 🔹🔸🔺🔻📌🧪🧵🏛
+===================================================================================================================
