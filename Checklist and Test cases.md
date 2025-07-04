@@ -5,22 +5,22 @@ updated: 04/07/2025
 
 ## 🍴🍝🤔 PHILOSOPHERS 😴😵
 ============================
-INDEX:
-├── [1] Philosophers Project Overview (check file "Project_Philosophers")
-├──	[2] THREADS / Synchronization / Mutex lock (check file "Project_Philosophers")
-├──	[3] Managing Threads’ Shared Memory (check file "Project_Philosophers")
-├── [4] Links / Bibliography(check file "Project_Philosophers")
-├── [5] BUILDING THE PROJECT (check file "Building_the_table")
-└── [6] CHECKLIST AND TEST CASES (check file "Testing_philosophers")
-		├── SUMMARY
-		├── CHECKLIST
-		├── TEST CASES
-		└── CONSIDERATIONS REGARDING VALGRIND AND HELGRIND
-
-## ⭐⭐PHILOSOPHERS - EVALUATION:⭐⭐
+INDEX:  
+├── [1] Philosophers Project Overview (check file "Project_Philosophers")  
+├──	[2] THREADS / Synchronization / Mutex lock (check file "Project_Philosophers")  
+├──	[3] Managing Threads’ Shared Memory (check file "Project_Philosophers")  
+├── [4] Links / Bibliography(check file "Project_Philosophers")  
+├── [5] BUILDING THE PROJECT (check file "Building_the_table")  
+└── [6] CHECKLIST AND TEST CASES (check file "Testing_philosophers")  
+		├── SUMMARY  
+		├── CHECKLIST  
+		├── TEST CASES  
+		└── CONSIDERATIONS REGARDING VALGRIND AND HELGRIND  
+  
+## ⭐⭐PHILOSOPHERS - EVALUATION:⭐⭐  
 ==============================
 
-📢 The content of this file was created by Maria Sofia Piantan! I just added some details. 
+📢 The content of this file was created by Maria Sofia Piantan! I just added some details.   
 
 ### 🧵 Summary:
 ----------------
