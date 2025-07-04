@@ -84,20 +84,20 @@ they all use has_died()
 [  ] Create one thread per philosopher.   
 [  ] Handle one-philosopher case: He should die after picking up a fork.  
 [  ] Implement philosophers’ actions:  
-		Thinking  
-		Picking up forks  
-		Eating  
-		Sleeping   
+		-Thinking  
+		-Picking up forks  
+		-Eating  
+		-Sleeping   
 [  ] Implement a monitor thread:  
-		Check philosopher deaths.  
-		Verify if all philosophers have eaten enough.  
-		Ensure proper synchronization.  
+		-Check philosopher deaths.  
+		-Verify if all philosophers have eaten enough.  
+		-Ensure proper synchronization.  
 [  ] Time Management:  
-		Track timestamps using gettimeofday().  
-		Use usleep() or similar delay function to sync actions.  
+		-Track timestamps using gettimeofday().  
+		-Use usleep() or similar delay function to sync actions.  
 [  ] Cleanup:  
-		Destroy all mutexes.  
-		Free allocated memory.  
+		-Destroy all mutexes.  
+		-Free allocated memory.  
 
 5. Input Handling & Error Management  
 
@@ -247,4 +247,4 @@ When you run your program under **Valgrind** or **Helgrind**, especially for a m
 🧪 Summary :   
 Valgrind/Helgrind slows down your program and affects thread timing. That’s expected, because they analyze every memory and thread operation. For timing-based simulations like *Philosophers*, this can lead to philosophers dying *under Valgrind* when they wouldn’t under normal execution.  
 
-GOOD LUCK WITH YOUR PROJECT !  
+
