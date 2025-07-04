@@ -6,7 +6,7 @@
 /*   18/03/2025			                  +#+ +#+        */
 /* ***************************************************************/
 
-🍴🍝🤔 PHILOSOPHERS 😴😵
+## 🍴🍝🤔 PHILOSOPHERS 😴😵
 ============================
 INDEX:
 ├── [1] Philosophers Project Overview (check file "Project_Philosophers")
@@ -20,12 +20,12 @@ INDEX:
 		├── TEST CASES
 		└── CONSIDERATIONS REGARDING VALGRIND AND HELGRIND
 
-⭐⭐PHILOSOPHERS - EVALUATION:⭐⭐
+## ⭐⭐PHILOSOPHERS - EVALUATION:⭐⭐
 ==============================
 
 📢 The content of this file was created by Maria Sofia Piantan! I just added some details. 
 
-🧵 Summary:
+### 🧵 Summary:
 ----------------
 
 1) check if there is any global variables : norminette will flag them. 
@@ -52,7 +52,7 @@ they all use has_died()
 - has_died() function in simulation.c . It uses a mutex to safely access the dead flag before allowing further actions. The death_lock mutex ensures consistency, preventing a philosopher from eating after being marked as dead.
 
 
-🧵 Checklist
+### 🧵 Checklist
 ----------
 
 1. Compilation & Code Structure
@@ -112,8 +112,8 @@ they all use has_died()
 
 6. Debugging & Performance
 
-[  ] Valgrind: No memory leaks (valgrind --leak-check=full ./philo).
-[  ] Helgrind: No thread errors (valgrind --tool=helgrind ./philo).
+[  ] 🧪 Valgrind: No memory leaks (valgrind --leak-check=full ./philo).
+[  ] 👺 Helgrind: No thread errors (valgrind --tool=helgrind ./philo).
 [  ] Test with different numbers of philosophers.
 [  ] Edge Cases:
 		One philosopher (should die after taking a fork).
@@ -122,10 +122,10 @@ they all use has_died()
 [  ] No segmentation faults or crashes.
 [  ] Check thread synchronization.
 
-🧵 Test Cases
+### 🧵 Test Cases
 ----------------
 
-Mandatory Part Test Cases
+#### Mandatory Part Test Cases
 -----------------------------
 
 **Basic Cases (No Philosopher Should Die)**
@@ -170,13 +170,13 @@ Mandatory Part Test Cases
 ./philo 0 800 200 200  # Zero values
 ./philo 5 800 200 200 0  # 0 meals should be invalid
 
-**Memory and Thread Testing**
+**Memory and Thread Testing** 🧪👺
 valgrind ./philo 5 200 100 100  # Memory leak check
 valgrind --leak-check=full --show-leak-kinds=all ./philo 1 300 300 300
 valgrind --tool=helgrind ./philo 4 410 200 200 5  # Race condition check
 valgrind --tool=helgrind ./philo 1 300 300 300
 
-**Bonus Part Test Cases (`./philo_bonus`)**
+#### **Bonus Part Test Cases (`./philo_bonus`)**
 
 **Basic Cases (No Philosopher Should Die)**
 ./philo_bonus 5 800 200 200
@@ -197,22 +197,24 @@ valgrind --tool=helgrind ./philo 1 300 300 300
 ./philo_bonus 5 800 200 200 7
 ./philo_bonus 4 410 200 200 10
 
-**Edge Cases**
+#### **Edge Cases**
 **Single Philosopher (Should Die)**
 ./philo_bonus 1 800 200 200
 
- **Philosophers Die Quickly (time_to_die < time_to_eat + time_to_sleep)**
+**Philosophers Die Quickly (time_to_die < time_to_eat + time_to_sleep)**
 ./philo_bonus 5 200 200 200
 ./philo_bonus 5 200 100 100
 ./philo_bonus 6 100 70 50
 ./philo_bonus 4 310 200 100
 ./philo_bonus 4 200 205 200
 
-**Memory and Thread Testing**
+#### **Memory and Thread Testing**
 valgrind ./philo_bonus 5 200 100 100  # Memory leak check
 valgrind --trace-children=yes ./philo_bonus 4 410 200 200 5  # Race condition check
 
-🧵 Considerations wen using Valgrind or Helgrind
+---
+
+### 🧵 Considerations wen using Valgrind or Helgrind
 ------------------------------------------------
 When you run your program under **Valgrind** or **Helgrind**, especially for a multi-threaded simulation like **Philosophers**, these tools can interfere with timing and synchronization. Here's **why that happens**:
 
